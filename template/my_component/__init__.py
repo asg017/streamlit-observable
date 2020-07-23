@@ -43,7 +43,7 @@ else:
 # `declare_component` and call it done. The wrapper allows us to customize
 # our component's API: we can pre-process its input args, post-process its
 # output value, and add a docstring for users.
-def my_component(name, key=None):
+def my_component(notebook, targets=None, observe=[], redefine={}):
     """Create a new instance of "my_component".
 
     Parameters
@@ -70,7 +70,7 @@ def my_component(name, key=None):
     #
     # "default" is a special argument that specifies the initial return
     # value of the component before the user has interacted with it.
-    component_value = _component_func(name=name, key=key, default=0)
+    component_value = _component_func(notebook=notebook, targets=targets, observe=observe, redefine=redefine)
 
     # We could modify the value returned from the component if we wanted.
     # There's no need to do this in our simple example - but it's an option.
@@ -87,20 +87,33 @@ if not _RELEASE:
 
     # Create an instance of our component with a constant `name` arg, and
     # print its output value.
-    num_clicks = my_component("World")
-    st.markdown("You've clicked %s times!" % int(num_clicks))
+    my_component(notebook="@d3/horizontal-bar-chart", 
+        targets=["chart", "data"], 
+        redefine={
+            "data": [
+                {"name":"Alex", "value": 100},
+                {"name":"Brian", "value": 300},
+                {"name":"Craig", "value": 200}
+            ],
+        }
+    )
+    d = my_component(notebook="@mbostock/form-input", 
+        targets=["viewof object"], 
+        observe=["object"]
+    )
+    st.json(d)
 
-    st.markdown("---")
-    st.subheader("Component with variable args")
+    my_component(notebook="@d3/disjoint-force-directed-graph", targets=["chart"])
 
-    # Create a second instance of our component whose `name` arg will vary
-    # based on a text_input widget.
-    #
-    # We use the special "key" argument to assign a fixed identity to this
-    # component instance. By default, when a component's arguments change,
-    # it is considered a new instance and will be re-mounted on the frontend
-    # and lose its current state. In this case, we want to vary the component's
-    # "name" argument without having it get recreated.
-    name_input = st.text_input("Enter a name", value="Streamlit")
-    num_clicks = my_component(name_input, key="foo")
-    st.markdown("You've clicked %s times!" % int(num_clicks))
+    strokes = my_component(notebook="@d3/draw-me", 
+        targets=[
+            "viewof strokes",
+            "viewof lineWidth", 
+            "viewof strokeStyle", 
+            "undo"
+        ], observe=["strokes"])
+
+    st.json(strokes)
+
+    countyCodes = my_component(notebook="@awhitty/fips-county-code-brush", targets=["viewof countyCodes"], observe=["countyCodes"])
+    st.json(countyCodes)

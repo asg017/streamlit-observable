@@ -4,6 +4,7 @@ import {
   StreamlitComponentBase,
   Streamlit,
 } from "./streamlit"
+import { Runtime, Inspector } from "@observablehq/runtime";
 
 interface State {
   numClicks: number
@@ -14,41 +15,81 @@ interface State {
  * automatically when your component should be re-rendered.
  */
 class MyComponent extends StreamlitComponentBase<State> {
+  public observeValue = {};
+  private notebookRef = React.createRef<HTMLDivElement>();
   public state = { numClicks: 0 }
 
-  public render = (): ReactNode => {
-    // Arguments that are passed to the plugin in Python are accessible
-    // via `this.props.args`. Here, we access the "name" arg.
-    const name = this.props.args["name"]
+  componentDidMount() {
+    const { notebook, targets = [], redefine, observe = [] } = this.props.args;
+    const targetSet = new Set(targets);
+    const observeSet = new Set(observe);
+    const runtime = new Runtime();
+    const observeValue = this.observeValue;
+    // @ ts-ignore
+    eval(`import("https://api.observablehq.com/${notebook}.js?v=3")`).then((d: any) => {
+      const define = d.default;
+      console.log(define, this.notebookRef.current);
+      const main = runtime.module(define, (name: string) => {
+        if (observeSet.has(name) && !targetSet.has(name)) {
+          return {
+            fulfilled(value: any) {
+              //@ts-ignore
+              observeValue[name] = value;
+              //@ts-ignore
+              Streamlit.setComponentValue(observeValue);
+            }
+          }
+        }
+        if (targetSet.size > 0 && !targetSet.has(name)) return;
 
-    // Show a button and some text.
-    // When the button is clicked, we'll increment our "numClicks" state
-    // variable, and send its new value back to Streamlit, where it'll
-    // be available to the Python program.
-    return (
-      <span>
-        Hello, {name}! &nbsp;
-        <button onClick={this.onClicked} disabled={this.props.disabled}>
-          Click Me!
-        </button>
-      </span>
-    )
+        const el = document.createElement('div');
+        this.notebookRef.current?.appendChild(el);
+
+        const i = new Inspector(el);
+        el.addEventListener('input', e => {
+          Streamlit.setFrameHeight();
+        })
+        return {
+          pending() {
+            i.pending();
+            Streamlit.setFrameHeight();
+          },
+          fulfilled(value: any) {
+            i.fulfilled(value);
+            Streamlit.setFrameHeight();
+          },
+          rejected(error: any) {
+            i.rejected(error);
+            Streamlit.setFrameHeight();
+          },
+        };
+      });
+      for (let cell in redefine) {
+        main.redefine(cell, redefine[cell]);
+      }
+      if (observeSet.size > 0) {
+        Promise.all(Array.from(observeSet).map(async name => [name, await main.value(name)])).then(initial => {
+          initial.map(([name, value]) => {
+            // @ts-ignore
+            this.observeValue[name] = value
+          });
+          Streamlit.setComponentValue(this.observeValue);
+        })
+      }
+    })
+
   }
 
-  /** Click handler for our "Click Me!" button. */
-  private onClicked = (): void => {
-    // Increment state.numClicks, and pass the new value back to
-    // Streamlit via `Streamlit.setComponentValue`.
-    this.setState(
-      prevState => ({ numClicks: prevState.numClicks + 1 }),
-      () => Streamlit.setComponentValue(this.state.numClicks)
+  public render = (): ReactNode => {
+    const name = this.props.args["name"];
+    const { notebook, redefine } = this.props.args;
+
+    return (
+      <div>
+        <div ref={this.notebookRef}></div>
+      </div >
     )
   }
 }
 
-// "withStreamlitConnection" is a wrapper function. It bootstraps the
-// connection between your component and the Streamlit app, and handles
-// passing arguments from Python -> Component.
-//
-// You don't need to edit withStreamlitConnection (but you're welcome to!).
 export default withStreamlitConnection(MyComponent)

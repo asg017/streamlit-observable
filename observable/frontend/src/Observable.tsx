@@ -6,18 +6,9 @@ import {
 } from "./streamlit"
 import { Runtime, Inspector } from "@observablehq/runtime";
 
-interface State {
-  numClicks: number
-}
-
-/**
- * This is a React-based component template. The `render()` function is called
- * automatically when your component should be re-rendered.
- */
-class MyComponent extends StreamlitComponentBase<State> {
+class Observable extends StreamlitComponentBase<{}> {
   public observeValue = {};
   private notebookRef = React.createRef<HTMLDivElement>();
-  public state = { numClicks: 0 }
 
   componentDidMount() {
     const { notebook, targets = [], redefine, observe = [] } = this.props.args;
@@ -81,9 +72,6 @@ class MyComponent extends StreamlitComponentBase<State> {
   }
 
   public render = (): ReactNode => {
-    const name = this.props.args["name"];
-    const { notebook, redefine } = this.props.args;
-
     return (
       <div>
         <div ref={this.notebookRef}></div>
@@ -92,4 +80,4 @@ class MyComponent extends StreamlitComponentBase<State> {
   }
 }
 
-export default withStreamlitConnection(MyComponent)
+export default withStreamlitConnection(Observable)

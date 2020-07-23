@@ -1,10 +1,10 @@
 import React from "react"
 import ReactDOM from "react-dom"
-import CustomDataframe from "./CustomDataframe"
+import Observable from "./Observable"
 
 ReactDOM.render(
   <React.StrictMode>
-    <CustomDataframe />
+    <Observable />
   </React.StrictMode>,
   document.getElementById("root")
 )

@@ -31,7 +31,7 @@ export interface ComponentProps {
 export class StreamlitComponentBase<S = {}> extends React.PureComponent<
   ComponentProps,
   S
-> {
+  > {
   public componentDidMount(): void {
     // After we're rendered for the first time, tell Streamlit that our height
     // has changed.
@@ -52,7 +52,7 @@ export class StreamlitComponentBase<S = {}> extends React.PureComponent<
 export function withStreamlitConnection(
   WrappedComponent: React.ComponentType<ComponentProps>
 ): React.ComponentType {
-  interface WrapperProps {}
+  interface WrapperProps { }
 
   interface WrapperState {
     renderData?: RenderData
@@ -62,7 +62,7 @@ export function withStreamlitConnection(
   class ComponentWrapper extends React.PureComponent<
     WrapperProps,
     WrapperState
-  > {
+    > {
     public constructor(props: WrapperProps) {
       super(props)
       this.state = {
@@ -92,7 +92,7 @@ export function withStreamlitConnection(
       Streamlit.setComponentReady()
     }
 
-    public componentDidUpdate = (): void => {
+    public componentDidUpdate = (prevProps: any): void => {
       // If our child threw an error, we display it in render(). In this
       // case, the child won't be mounted and therefore won't call
       // `setFrameHeight` on its own. We do it here so that the rendered

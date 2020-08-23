@@ -67,7 +67,12 @@ if not _RELEASE:
         df["County"] = df["County"].str[-3:]
         return df
 
-    if st.checkbox("Spike chart"):
+    section = st.sidebar.selectbox(
+        "Example",
+        ("spike", "bar-chart", "form", "force-graph", "draw", "counties")
+    )
+
+    if section == 'spike':
         df = get_birth_csv()
 
         year = st.slider("Year", min(df["Year"]), max(df['Year']), value=2010)
@@ -82,16 +87,20 @@ if not _RELEASE:
             "rawData": df_map[["countyBirths", "State", "County"]].to_numpy().tolist(),
             "color": color
         })
-    if st.checkbox("Bar Chart"):
-        observable("Example Bar Chart", "@d3/horizontal-bar-chart", ["chart"], {
+    elif section == 'bar-chart':
+        a = st.slider("Alex", value=30)
+        b = st.slider("Brian", value=20)
+        c = st.slider("Craig", value=50)
+
+        observable("Example Updatable Bar Chart", "@juba/updatable-bar-chart", ["chart", "draw"], {
             "data": [
-                {"name": "Alex", "value": .100},
-                {"name": "Brian", "value": .300},
-                {"name": "Craig", "value": .200}
+                {"name": "Alex", "value": a},
+                {"name": "Brian", "value": b},
+                {"name": "Craig", "value": c}
             ],
         }
         )
-    if st.checkbox("Form input"):
+    elif section == 'form':
         d = observable("Example form", "@mbostock/form-input",
                        targets=["viewof object"],
                        observe=["object"]
@@ -104,7 +113,7 @@ if not _RELEASE:
             emojis=str(o.get("emojis"))
         ))
 
-    if st.checkbox("disjointed force graph"):
+    elif section == 'force-graph':
         @st.cache
         def get_force():
             df_characters = pd.read_json(
@@ -139,13 +148,15 @@ if not _RELEASE:
             }
         })
 
-    if st.checkbox("Draw me"):
-        strokes = observable("Example Drawing Canvas", "@d3/draw-me", [
-                             "viewof strokes", "viewof lineWidth", "viewof strokeStyle", "undo"], ["strokes"])
+    elif section == 'draw':
+        strokes = observable("Example Drawing Canvas", notebook="@d3/draw-me", targets=[
+                             "viewof strokes", "viewof lineWidth", "viewof strokeStyle", "undo"], observe=["strokes"])
 
         st.json(strokes)
 
-    if st.checkbox("County Brush"):
-        countyCodes = observable(
-            "County Brush", "@awhitty/fips-county-code-brush", ["viewof countyCodes"], ["countyCodes"])
+    elif section == 'counties':
+        countyCodes = observable("County Brush", notebook="@awhitty/fips-county-code-brush",
+                                 targets=["viewof countyCodes"], observe=["countyCodes"])
         st.json(countyCodes)
+    observable("Eyes", notebook="@mbostock/eyes",
+               targets=["canvas", "mouse"])

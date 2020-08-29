@@ -60,6 +60,13 @@ def observable(key, notebook, targets=None, redefine={}, observe=[], hide=[]):
 
 
 if not _RELEASE:
-    import showcase
-    showcase.showcase(observable)
+    observers = observable("World Tour!", 
+        notebook="@d3/world-tour", 
+        targets=["canvas"], 
+        observe=["name"]
+    )
+    
+    name = observers.get("name")
+    
+    st.write(f"Current country: ** *{name}* **")
     

@@ -1,5 +1,6 @@
 import setuptools
 from os import path
+
 def get_long_description():
     with open(
         path.join(path.dirname(path.abspath(__file__)), "README.md"),
@@ -9,8 +10,9 @@ def get_long_description():
 
 setuptools.setup(
     name="streamlit-observable",
-    version="0.0.1",
+    version="0.0.3",
     author="Alex Garcia",
+    author_email="alexsebastian.garcia@gmail.com",
     description="A Streamlit Component for embeding Observable Notebooks in Streamlit Apps",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",

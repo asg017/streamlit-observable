@@ -24,12 +24,13 @@ class Observable extends StreamlitComponentBase<{}> {
     this.redefineCells(this.main, this.props.args.redefine);
   }
 
-  async embedNotebook(notebook: string, targets: string[], observe: string[]) {
+  async embedNotebook(notebook: string, targets: string[], observe: string[], hide:string[]) {
     if (this.runtime) {
       this.runtime.dispose();
     }
     const targetSet = new Set(targets);
     const observeSet = new Set(observe);
+    const hideSet = new Set(hide);
     this.runtime = new Runtime();
     const { default: define } = await eval(`import("https://api.observablehq.com/${notebook}.js?v=3")`);
     this.main = this.runtime.module(define, (name: string) => {
@@ -45,7 +46,7 @@ class Observable extends StreamlitComponentBase<{}> {
         }
       }
       if (targetSet.size > 0 && !targetSet.has(name)) return;
-
+      if(hideSet.has(name)) return true;
       const el = document.createElement('div');
       this.notebookRef.current?.appendChild(el);
 
@@ -86,9 +87,9 @@ class Observable extends StreamlitComponentBase<{}> {
     }
   }
   componentDidMount() {
-    const { notebook, targets = [], observe = [], redefine = {} } = this.props.args;
+    const { notebook, targets = [], observe = [], redefine = {} , hide=[]} = this.props.args;
     Streamlit.setComponentValue(this.observeValue);
-    this.embedNotebook(notebook, targets, observe).then(() => {
+    this.embedNotebook(notebook, targets, observe, hide).then(() => {
       this.redefineCells(this.main, redefine);
     });
 
@@ -101,14 +102,19 @@ class Observable extends StreamlitComponentBase<{}> {
           <div ref={this.notebookRef}></div>
         </div>
         <div style={{ marginTop: '4px' }}>
+          
           <div style={{
             backgroundColor: '#ddd',
             fontWeight: 700,
-            textAlign: "right",
-            paddingRight: '.5rem',
-            borderRadius: '0 0 4px 4px'
+            padding: ".25rem .5rem",
+            borderRadius: '0 0 4px 4px',
+            gridTemplateColumns: "auto auto",
+            display:"grid"
           }}>
+            <div style={{textAlign:"left"}}>{this.props.args.name}</div>
+            <div style={{textAlign:"right"}}>
             <a href={`https://observablehq.com/${this.props.args.notebook}`} style={{ color: '#666', }}>{this.props.args.notebook}</a>
+            </div>
           </div>
         </div>
       </div >

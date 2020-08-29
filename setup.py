@@ -10,7 +10,7 @@ def get_long_description():
 
 setuptools.setup(
     name="streamlit-observable",
-    version="0.0.4",
+    version="0.0.5",
     author="Alex Garcia",
     author_email="alexsebastian.garcia@gmail.com",
     description="A Streamlit Component for embeding Observable Notebooks in Streamlit Apps",

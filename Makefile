@@ -4,7 +4,7 @@ frontend:
 	npm run build --prefix streamlit_observable/frontend
 
 wheels:
-	python3 setup.py sdist bdist_wheel
+	python setup.py sdist bdist_wheel
 
 upload:
-	echo "python3 -m twine upload dist/*"
+	echo "python -m twine upload dist/*"

@@ -56,6 +56,10 @@ def observable(key, notebook, targets=None, redefine={}, observe=[], hide=[]):
         key=key,
         name=key
     )
+    
+    if component_value is None:
+        return {}
+
     return component_value
 
 
@@ -69,4 +73,3 @@ if not _RELEASE:
     name = observers.get("name")
     
     st.write(f"Current country: ** *{name}* **")
-    

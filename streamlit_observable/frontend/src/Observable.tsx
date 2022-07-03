@@ -3,7 +3,7 @@ import {
   withStreamlitConnection,
   StreamlitComponentBase,
   Streamlit,
-} from "./streamlit"
+} from "streamlit-component-lib"
 import { Runtime, Inspector } from "@observablehq/runtime";
 
 class Observable extends StreamlitComponentBase<{}> {
@@ -21,7 +21,9 @@ class Observable extends StreamlitComponentBase<{}> {
     if (prevArgs.notebook !== this.props.args.notebook) {
       // TODO handle new notebook
     }
-    this.redefineCells(this.main, this.props.args.redefine);
+    if (this.main) {
+      this.redefineCells(this.main, this.props.args.redefine);
+    }
   }
 
   async embedNotebook(notebook: string, targets: string[], observe: string[], hide:string[]) {
@@ -32,7 +34,7 @@ class Observable extends StreamlitComponentBase<{}> {
     const observeSet = new Set(observe);
     const hideSet = new Set(hide);
     this.runtime = new Runtime();
-    const { default: define } = await eval(`import("https://api.observablehq.com/${notebook}.js?v=3")`);
+    const { default: define } = await eval(`import("https://api.observablehq.com/${notebook}.js?v=3")`); // eslint-disable-line no-eval
     this.main = this.runtime.module(define, (name: string) => {
       if (observeSet.has(name) && !targetSet.has(name)) {
         const observeValue = this.observeValue;
@@ -51,7 +53,7 @@ class Observable extends StreamlitComponentBase<{}> {
       this.notebookRef.current?.appendChild(el);
 
       const i = new Inspector(el);
-      el.addEventListener('input', e => {
+      el.addEventListener('input', () => {
         Streamlit.setFrameHeight();
       })
       return {
@@ -74,7 +76,7 @@ class Observable extends StreamlitComponentBase<{}> {
         for (const [name, value] of initial) {
           // @ts-ignore
           this.observeValue[name] = value
-        };
+        }
         Streamlit.setComponentValue(this.observeValue);
       })
     }
@@ -113,7 +115,7 @@ class Observable extends StreamlitComponentBase<{}> {
           }}>
             <div style={{textAlign:"left"}}>{this.props.args.name}</div>
             <div style={{textAlign:"right"}}>
-            <a href={`https://observablehq.com/${this.props.args.notebook}`} style={{ color: '#666', }}>{this.props.args.notebook}</a>
+            <a target="_blank" rel="noopener noreferrer" href={`https://observablehq.com/${this.props.args.notebook}`} style={{ color: '#666', }}>{this.props.args.notebook}</a>
             </div>
           </div>
         </div>

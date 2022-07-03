@@ -90,7 +90,6 @@ class Observable extends StreamlitComponentBase<{}> {
   }
   componentDidMount() {
     const { notebook, targets = [], observe = [], redefine = {} , hide=[]} = this.props.args;
-    Streamlit.setComponentValue(this.observeValue);
     this.embedNotebook(notebook, targets, observe, hide).then(() => {
       this.redefineCells(this.main, redefine);
     });

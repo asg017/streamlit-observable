@@ -119,6 +119,7 @@ Embed an Observable notebook into the Streamlit app. If any cells are passed int
 - `observe`: An optional list of cell names to observe. When those cells are updated in the Observable notebook, the new values will be sent back to Streamlit as part of the return value. Keep in mind, there is a serialization process from going from Observable notebook JavaScript -> Streamlit Python (JSON serializing).
 - `redefine`: An optional dict of cell names and values used to redefine in the embeded notebook. Keep in mind, there is a serialization process from going from Streamlit Python -> Observable notebook JavaScript (JSON serializing).
 - `hide`: An optional list of cell names that will not be rendered in the DOM of the embed. Useful for side-effect logic cells, like `mouse` in https://observablehq.com/@mbostock/eyes.
+- `debounce`: An optional delay in milliseconds. Observed values don't change until a delay after the last update is less than the option value.
 
 ## Caveats
 

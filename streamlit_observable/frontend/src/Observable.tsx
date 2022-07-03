@@ -5,12 +5,14 @@ import {
   Streamlit,
 } from "streamlit-component-lib"
 import { Runtime, Inspector } from "@observablehq/runtime";
+import debounceExecution from "./debounceExecution"
 
 class Observable extends StreamlitComponentBase<{}> {
   public observeValue = {};
   private notebookRef = React.createRef<HTMLDivElement>();
   private runtime: any = null;
   private main: any = null;
+  private debounceUpdate: any = null;
 
   componentWillUnmount() {
     this.runtime?.dispose();
@@ -21,15 +23,19 @@ class Observable extends StreamlitComponentBase<{}> {
     if (prevArgs.notebook !== this.props.args.notebook) {
       // TODO handle new notebook
     }
+    if (prevArgs.debounce !== this.props.args.debounce) {
+      this.setupDebounceUpdate(this.props.args.debounce)
+    }
     if (this.main) {
       this.redefineCells(this.main, this.props.args.redefine);
     }
   }
 
-  async embedNotebook(notebook: string, targets: string[], observe: string[], hide:string[]) {
+  async embedNotebook(notebook: string, targets: string[], observe: string[], hide: string[], debounce: number) {
     if (this.runtime) {
       this.runtime.dispose();
     }
+    this.setupDebounceUpdate(debounce)
     const targetSet = new Set(targets);
     const observeSet = new Set(observe);
     const hideSet = new Set(hide);
@@ -42,8 +48,7 @@ class Observable extends StreamlitComponentBase<{}> {
           fulfilled: (value: any) => {
             //@ts-ignore
             observeValue[name] = value;
-            //@ts-ignore
-            Streamlit.setComponentValue(observeValue);
+            this.debounceUpdate()
           }
         }
       }
@@ -77,8 +82,16 @@ class Observable extends StreamlitComponentBase<{}> {
           // @ts-ignore
           this.observeValue[name] = value
         }
-        Streamlit.setComponentValue(this.observeValue);
+        this.debounceUpdate()
       })
+    }
+  }
+
+  private setupDebounceUpdate(debounce: any) {
+    if (debounce) {
+      this.debounceUpdate = debounceExecution(() => Streamlit.setComponentValue(this.observeValue), debounce)
+    } else {
+      this.debounceUpdate = () => Streamlit.setComponentValue(this.observeValue)
     }
   }
 
@@ -89,8 +102,8 @@ class Observable extends StreamlitComponentBase<{}> {
     }
   }
   componentDidMount() {
-    const { notebook, targets = [], observe = [], redefine = {} , hide=[]} = this.props.args;
-    this.embedNotebook(notebook, targets, observe, hide).then(() => {
+    const { notebook, targets = [], observe = [], redefine = {} , hide = [], debounce = 0 } = this.props.args;
+    this.embedNotebook(notebook, targets, observe, hide, debounce).then(() => {
       this.redefineCells(this.main, redefine);
     });
 

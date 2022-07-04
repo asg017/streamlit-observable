@@ -58,23 +58,37 @@ class Observable extends StreamlitComponentBase<{}> {
       this.notebookRef.current?.appendChild(el);
 
       const i = new Inspector(el);
-      el.addEventListener('input', () => {
-        Streamlit.setFrameHeight();
-      })
-      return {
-        pending() {
-          i.pending();
+
+      const ResizeObserver = (window as any).ResizeObserver
+      if (ResizeObserver) {
+        const resizeObserver = new ResizeObserver(() => {
           Streamlit.setFrameHeight();
-        },
-        fulfilled(value: any) {
-          i.fulfilled(value);
+        })
+        resizeObserver.observe(el)
+        return {
+          fulfilled(value: any) {
+            i.fulfilled(value);
+          }
+        }
+      } else {
+        el.addEventListener('input', () => {
           Streamlit.setFrameHeight();
-        },
-        rejected(error: any) {
-          i.rejected(error);
-          Streamlit.setFrameHeight();
-        },
-      };
+        })
+        return {
+          pending() {
+            i.pending();
+            Streamlit.setFrameHeight();
+          },
+          fulfilled(value: any) {
+            i.fulfilled(value);
+            Streamlit.setFrameHeight();
+          },
+          rejected(error: any) {
+            i.rejected(error);
+            Streamlit.setFrameHeight();
+          },
+        };
+      }
     });
     if (observeSet.size > 0) {
       Promise.all(Array.from(observeSet).map(async name => [name, await this.main.value(name)])).then(initial => {

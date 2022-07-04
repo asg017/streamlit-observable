@@ -58,7 +58,8 @@ def observable(key, notebook, targets=None, redefine={}, observe=[], hide=[], de
         redefine=redefine,
         hide=hide,
         key=key,
-        name=key
+        name=key,
+        debounce=debounce
     )
     
     if component_value is None:

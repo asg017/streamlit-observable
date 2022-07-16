@@ -3,14 +3,16 @@ import {
   withStreamlitConnection,
   StreamlitComponentBase,
   Streamlit,
-} from "./streamlit"
+} from "streamlit-component-lib"
 import { Runtime, Inspector } from "@observablehq/runtime";
+import debounceExecution from "./debounceExecution"
 
 class Observable extends StreamlitComponentBase<{}> {
   public observeValue = {};
   private notebookRef = React.createRef<HTMLDivElement>();
   private runtime: any = null;
   private main: any = null;
+  private debounceUpdate: any = null;
 
   componentWillUnmount() {
     this.runtime?.dispose();
@@ -21,18 +23,24 @@ class Observable extends StreamlitComponentBase<{}> {
     if (prevArgs.notebook !== this.props.args.notebook) {
       // TODO handle new notebook
     }
-    this.redefineCells(this.main, this.props.args.redefine);
+    if (prevArgs.debounce !== this.props.args.debounce) {
+      this.setupDebounceUpdate(this.props.args.debounce)
+    }
+    if (this.main) {
+      this.redefineCells(this.main, this.props.args.redefine);
+    }
   }
 
-  async embedNotebook(notebook: string, targets: string[], observe: string[], hide:string[]) {
+  async embedNotebook(notebook: string, targets: string[], observe: string[], hide: string[], debounce: number) {
     if (this.runtime) {
       this.runtime.dispose();
     }
+    this.setupDebounceUpdate(debounce)
     const targetSet = new Set(targets);
     const observeSet = new Set(observe);
     const hideSet = new Set(hide);
     this.runtime = new Runtime();
-    const { default: define } = await eval(`import("https://api.observablehq.com/${notebook}.js?v=3")`);
+    const { default: define } = await eval(`import("https://api.observablehq.com/${notebook}.js?v=3")`); // eslint-disable-line no-eval
     this.main = this.runtime.module(define, (name: string) => {
       if (observeSet.has(name) && !targetSet.has(name)) {
         const observeValue = this.observeValue;
@@ -40,8 +48,7 @@ class Observable extends StreamlitComponentBase<{}> {
           fulfilled: (value: any) => {
             //@ts-ignore
             observeValue[name] = value;
-            //@ts-ignore
-            Streamlit.setComponentValue(observeValue);
+            this.debounceUpdate()
           }
         }
       }
@@ -51,7 +58,15 @@ class Observable extends StreamlitComponentBase<{}> {
       this.notebookRef.current?.appendChild(el);
 
       const i = new Inspector(el);
-      el.addEventListener('input', e => {
+
+      const ResizeObserver = (window as any).ResizeObserver
+      if (ResizeObserver) {
+        const resizeObserver = new ResizeObserver(() => {
+          Streamlit.setFrameHeight();
+        })
+        resizeObserver.observe(el)
+      }
+      el.addEventListener('input', () => {
         Streamlit.setFrameHeight();
       })
       return {
@@ -74,9 +89,17 @@ class Observable extends StreamlitComponentBase<{}> {
         for (const [name, value] of initial) {
           // @ts-ignore
           this.observeValue[name] = value
-        };
-        Streamlit.setComponentValue(this.observeValue);
+        }
+        this.debounceUpdate()
       })
+    }
+  }
+
+  private setupDebounceUpdate(debounce: any) {
+    if (debounce) {
+      this.debounceUpdate = debounceExecution(() => Streamlit.setComponentValue(this.observeValue), debounce)
+    } else {
+      this.debounceUpdate = () => Streamlit.setComponentValue(this.observeValue)
     }
   }
 
@@ -87,9 +110,8 @@ class Observable extends StreamlitComponentBase<{}> {
     }
   }
   componentDidMount() {
-    const { notebook, targets = [], observe = [], redefine = {} , hide=[]} = this.props.args;
-    Streamlit.setComponentValue(this.observeValue);
-    this.embedNotebook(notebook, targets, observe, hide).then(() => {
+    const { notebook, targets = [], observe = [], redefine = {} , hide = [], debounce = 0 } = this.props.args;
+    this.embedNotebook(notebook, targets, observe, hide, debounce).then(() => {
       this.redefineCells(this.main, redefine);
     });
 
@@ -113,7 +135,7 @@ class Observable extends StreamlitComponentBase<{}> {
           }}>
             <div style={{textAlign:"left"}}>{this.props.args.name}</div>
             <div style={{textAlign:"right"}}>
-            <a href={`https://observablehq.com/${this.props.args.notebook}`} style={{ color: '#666', }}>{this.props.args.notebook}</a>
+            <a target="_blank" rel="noopener noreferrer" href={`https://observablehq.com/${this.props.args.notebook}`} style={{ color: '#666', }}>{this.props.args.notebook}</a>
             </div>
           </div>
         </div>

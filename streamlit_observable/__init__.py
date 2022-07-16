@@ -14,7 +14,7 @@ else:
     _component_func = components.declare_component("observable", path=build_dir)
 
 
-def observable(key, notebook, targets=None, redefine={}, observe=[], hide=[]):
+def observable(key, notebook, targets=None, redefine={}, observe=[], hide=[], debounce=None):
     """Create a new instance of "observable".
 
     Parameters
@@ -37,8 +37,12 @@ def observable(key, notebook, targets=None, redefine={}, observe=[], hide=[]):
         redefine, the values are what they will be redefined as. Keep in mind,
         there is a serialization process from Streamlit Python -> frontend JavaScript.
     hide: list or None
-        An option list of strings that are the names of cells that will be embeded,
+        An optional list of strings that are the names of cells that will be embeded,
         but won't be rendered to the DOM.
+    debounce: float or None
+        An optional delay in milliseconds.
+        Observed values don't change
+        until a delay after the last update is less than the option value.
     Returns
     -------
     dict
@@ -54,7 +58,8 @@ def observable(key, notebook, targets=None, redefine={}, observe=[], hide=[]):
         redefine=redefine,
         hide=hide,
         key=key,
-        name=key
+        name=key,
+        debounce=debounce
     )
     
     if component_value is None:

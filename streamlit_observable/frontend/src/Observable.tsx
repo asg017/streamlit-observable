@@ -65,30 +65,24 @@ class Observable extends StreamlitComponentBase<{}> {
           Streamlit.setFrameHeight();
         })
         resizeObserver.observe(el)
-        return {
-          fulfilled(value: any) {
-            i.fulfilled(value);
-          }
-        }
-      } else {
-        el.addEventListener('input', () => {
-          Streamlit.setFrameHeight();
-        })
-        return {
-          pending() {
-            i.pending();
-            Streamlit.setFrameHeight();
-          },
-          fulfilled(value: any) {
-            i.fulfilled(value);
-            Streamlit.setFrameHeight();
-          },
-          rejected(error: any) {
-            i.rejected(error);
-            Streamlit.setFrameHeight();
-          },
-        };
       }
+      el.addEventListener('input', () => {
+        Streamlit.setFrameHeight();
+      })
+      return {
+        pending() {
+          i.pending();
+          Streamlit.setFrameHeight();
+        },
+        fulfilled(value: any) {
+          i.fulfilled(value);
+          Streamlit.setFrameHeight();
+        },
+        rejected(error: any) {
+          i.rejected(error);
+          Streamlit.setFrameHeight();
+        },
+      };
     });
     if (observeSet.size > 0) {
       Promise.all(Array.from(observeSet).map(async name => [name, await this.main.value(name)])).then(initial => {
